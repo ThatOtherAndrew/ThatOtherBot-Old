@@ -1,0 +1,21 @@
+{
+  "debug": false,
+  "prefixes": ["\\"],
+  "presence": {
+    "": "Type 1: Playing, Type 2: Watching, Type 3: Listening, Type 4: Competing in",
+    "type": 4,
+    "message": "Best Bot 2021 Contest"
+  },
+  "channels": {},
+  "embed": {
+    "colour": 8988857
+  },
+  "staff": {
+    "admins": [
+      650459420635168769
+    ]
+  },
+  "modules": {
+    "greetings": []
+  }
+}
