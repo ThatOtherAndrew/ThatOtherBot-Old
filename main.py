@@ -60,7 +60,7 @@ async def test(ctx):
 # Bot admin commands
 @bot.command(aliases=["exec"])
 async def execute(ctx, *, arg=None):
-    """Executes some Python code in the current scope"""
+    """Executes a line of Python code'"""
     if ctx.author.id in config.staff.admins:
         try:
             exec(arg)
@@ -95,8 +95,8 @@ async def evaluate(ctx, *, arg=None):
 async def disable(ctx, command):
     """Disables a command to prevent it from being used"""
     if ctx.author.id in config.staff.admins:
-        if not bot.get_command(command).enabled:
-            bot.get_command(command).enabled = True
+        if bot.get_command(command).enabled:
+            bot.get_command(command).enabled = False
             await ctx.send(f":ok_hand: The {command} command is now disabled, and cannot be used until you use "
                            f"`{config.prefixes[0]}enable {command}`.")
         else:
@@ -107,8 +107,8 @@ async def disable(ctx, command):
 async def enable(ctx, command):
     """Enables a previously disabled command"""
     if ctx.author.id in config.staff.admins:
-        if bot.get_command(command).enabled:
-            bot.get_command(command).enabled = False
+        if not bot.get_command(command).enabled:
+            bot.get_command(command).enabled = True
             await ctx.send(f":ok_hand: The {command} command is now enabled, and can be used.")
         else:
             await ctx.send(f"The {command} command is already enabled!")
@@ -119,6 +119,8 @@ async def enable(ctx, command):
 async def on_command_error(ctx, exception):
     """Catches exceptions raised during usage of the bot"""
     if exception == commands.errors.CommandNotFound:  # Ignore invalid commands
+        pass
+    elif exception == commands.errors.DisabledCommand:  # Ignore disabled command call attempts
         pass
     else:
         try:
