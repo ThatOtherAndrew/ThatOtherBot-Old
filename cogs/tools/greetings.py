@@ -9,7 +9,7 @@ class Join(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, ctx):
         print("Test")
-        e = initembed(ctx, "Welcome!", "Someone new has joined the server!")
+        e = initembed(ctx, "Welcome!", f"{member.name} new has joined the server!")
         await ctx.send(embed=e)
 
 
@@ -20,5 +20,5 @@ class Leave(commands.Cog):
     @commands.Cog.listener()
     async def on_member_leave(self, ctx):
         print("Test")
-        e = initembed(ctx, "Goodbye!", "Someone new has joined the server!")
+        e = initembed(ctx, "Goodbye!", f"{member.name} new has joined the server!")
         await ctx.send(embed=e)
