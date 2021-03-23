@@ -1,8 +1,7 @@
 from discord.ext import commands
-
 from assets.functions import *
 
-print("Parsing code...")
+import re
 
 # Changes execution directory to the script location
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -24,7 +23,8 @@ bot = commands.Bot(
 # Initialising the bot
 @bot.event
 async def on_ready():
-    print(f"Logged in as {bot.user.name}, client ID {str(bot.user.id)}\n================================")
+    print(f"{colour.Fore.GREEN}[O] Logged in as {colour.Fore.YELLOW}{bot.user}{colour.Fore.GREEN}, client ID "
+          f"{colour.Fore.YELLOW}{str(bot.user.id)}\n{colour.Fore.RESET}{colour.Style.BRIGHT}{'═' * 32}")
 
 
 # Core event-based operations
@@ -36,7 +36,7 @@ async def on_message(message):
 
     # Debug mode
     if config.debug:
-        print(message.content)
+        print(f"[-] DEBUG: {message.content}")
 
     if bot.user in message.mentions:
         await message.channel.send(
@@ -60,15 +60,13 @@ async def test(ctx):
 # Bot admin commands
 @bot.command(aliases=["exec"])
 async def execute(ctx, *, arg=None):
-    """Executes a line of Python code'"""
+    """Executes a line of Python code"""
     if ctx.author.id in config.staff.admins:
         try:
             exec(arg)
             await ctx.message.add_reaction("👍")
         except Exception as exception:
-            e = initembed(ctx, "An error occurred during execution", image="error")
-            e.embed.add_field(name="Exception:", value=str(exception))
-            await ctx.send(embed=e.embed, file=e.file)
+            await reporterror(ctx, exception)
     else:
         await ctx.send(
             f":octagonal_sign: **You can't use that!** {ctx.author.mention}, you have to be a bot admin to use the "
@@ -82,9 +80,7 @@ async def evaluate(ctx, *, arg=None):
         try:
             await ctx.send(f"```{eval(arg)}```")
         except Exception as exception:
-            e = initembed(ctx, "An error occurred during execution", image="error")
-            e.embed.add_field(name="Exception:", value=str(exception))
-            await ctx.send(embed=e.embed, file=e.file)
+            await reporterror(ctx, exception)
     else:
         await ctx.send(
             f":octagonal_sign: **You can't use that!** {ctx.author.mention}, you have to be a bot admin to use the "
@@ -114,6 +110,31 @@ async def enable(ctx, command):
             await ctx.send(f"The {command} command is already enabled!")
 
 
+@bot.command()
+async def reload(ctx, *args):
+    """Reloads the specified extensions, or everything if no extensions specified"""
+    print(f"{colour.Fore.YELLOW}[+] Reloading extensions")
+    args = "" if args == () else args
+    for reloadpath in args:
+        try:
+            bot.reload_extension(reloadpath)
+        except commands.errors.ExtensionNotLoaded:
+            try:
+                for extensionpath in getextensions(reloadpath):
+                    print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RESET}[-] " + extension, end="", flush=True)
+                    bot.reload_extension(extensionpath)
+                    print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.GREEN}[O] {extension}")
+            except (TypeError, commands.errors.ExtensionNotLoaded):
+                await ctx.send(f":warning: `{reloadpath}` is not a valid path")
+    await ctx.send("Reloaded!")
+
+
+# Command logging in console
+@bot.event
+async def on_command_completion(ctx):
+    print(f"[-] {ctx.author} ({ctx.author.id}) ran the command {colour.Style.BRIGHT}{ctx.message.content}")
+
+
 # Error catching
 @bot.event
 async def on_command_error(ctx, exception):
@@ -123,19 +144,27 @@ async def on_command_error(ctx, exception):
     elif exception == commands.errors.DisabledCommand:  # Ignore disabled command call attempts
         pass
     else:
+        await reporterror(ctx, exception)
+
+
+# Load all extensions in the cogs directory
+print(f"{colour.Fore.YELLOW}[+] Loading extensions")
+
+try:
+    for extension in getextensions():
+        print("\r │  [-] " + extension, end="", flush=True)
         try:
-            await ctx.send(
-                ":warning: **An error occurred.** This error has been logged, please notify a bot admin if necessary.\n"
-                f"\nError details: ```{exception}```")
-        except Exception as criticalexception:
-            print("An error occurred, attempt to report error as a message failed.")
-            print(criticalexception)
-        finally:
-            print(f"Error: {exception}")
+            bot.load_extension(extension)
+            print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.GREEN}[O] {extension}")
+        except Exception as error:
+            print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RED}[X] {extension}\n"
+                  f"{colour.Fore.YELLOW} │    {colour.Fore.RED}- {error}")
+except TypeError:
+    print(f"{colour.Fore.RED}[!] No extensions loaded. This is likely due to a missing cogs directory!")
 
 
 # Run the bot!
-print("Initialising session...")
+print(f"{colour.Fore.YELLOW}[+] Initialising session")
 
 if __name__ == "__main__":
     try:
@@ -152,4 +181,4 @@ if __name__ == "__main__":
 
         print(f"Error details:\n{error}")
 
-print("Session ended.")
+print(f"{colour.Fore.RED}{colour.Style.BRIGHT}[Session ended]")
