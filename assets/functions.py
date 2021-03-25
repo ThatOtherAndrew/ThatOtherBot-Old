@@ -4,6 +4,7 @@ import munch
 import os
 import sys
 from dotenv import load_dotenv
+from glob import glob
 from traceback import format_exception
 import colorama as colour
 
@@ -50,12 +51,16 @@ def formatexception(exception: Exception):
 
 
 def getextensions(searchdir: str = ""):
-    extensions = []
-    for path, _, files in os.walk(f".\\cogs\\{searchdir}"):
-        for file in files:
-            if file.endswith(".py"):
-                extensions.append(f"{path[2:].replace(chr(92), '.')}.{file[:-3]}")
-    return extensions if extensions != [] else None
+    if searchdir.startswith("cogs."):
+        searchdir = searchdir[5:]
+    if os.path.isfile(f"cogs/{searchdir.replace('.', '/')}.py"):
+        return [f"cogs.{searchdir}"]
+    else:
+        extensionpaths = [i.replace("\\", ".").replace("/", ".")[:-3] for i in glob(
+            f"cogs/{searchdir.replace('.', '/')}/**/*.py",
+            recursive=True
+        )]
+        return extensionpaths if extensionpaths != [] else [None]
 
 
 def initembed(ctx, title, description="", image=None, bordercolour=config.embed.colour):
@@ -73,7 +78,7 @@ async def reporterror(ctx, exception):
     try:
         e = initembed(ctx, "An error occurred during execution", bordercolour=0xFF0000)
         e.add_field(
-            name="Traceback (May be truncated):",
+            name="Traceback (May be truncated)",
             value=f"```{formatexception(exception).replace('```', '`‍`‍`')[-1018:]}```"
         )
         await ctx.send(embed=e)

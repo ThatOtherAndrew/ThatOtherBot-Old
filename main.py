@@ -113,20 +113,47 @@ async def enable(ctx, command):
 @bot.command()
 async def reload(ctx, *args):
     """Reloads the specified extensions, or everything if no extensions specified"""
-    print(f"{colour.Fore.YELLOW}[+] Reloading extensions")
-    args = "" if args == () else args
-    for reloadpath in args:
-        try:
-            bot.reload_extension(reloadpath)
-        except commands.errors.ExtensionNotLoaded:
-            try:
-                for extensionpath in getextensions(reloadpath):
+    if ctx.author.id in config.staff.admins:
+        print(f"{colour.Fore.YELLOW}[+] Reloading extensions")
+        reloadedextensions = []
+        successfulreloads = []
+        failedreloads = []
+        args = [""] if args == () else args
+
+        for reloadpath in args:
+            for extensionpath in getextensions(reloadpath):
+                if extensionpath not in reloadedextensions:
+                    reloadedextensions.append(extensionpath)
+                    if extensionpath is None:
+                        print(f"{colour.Fore.YELLOW} │  {colour.Fore.RED}[X] No extensions found in path cogs.{reloadpath}")
+                        failedreloads.append(f"- Invalid path: {reloadpath}")
+                        continue
                     print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RESET}[-] " + extension, end="", flush=True)
-                    bot.reload_extension(extensionpath)
-                    print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.GREEN}[O] {extension}")
-            except (TypeError, commands.errors.ExtensionNotLoaded):
-                await ctx.send(f":warning: `{reloadpath}` is not a valid path")
-    await ctx.send("Reloaded!")
+                    try:
+                        bot.reload_extension(extensionpath)
+                        print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.GREEN}[O] {extension}")
+                        successfulreloads.append(f"+ {extensionpath}")
+                    except Exception as exception:
+                        print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RED}[X] {extension}\n"
+                              f"{colour.Fore.YELLOW} │    {colour.Fore.RED}- {exception}")
+                        failedreloads.append(f"- Unknown error: {exception}")
+
+        e = initembed(ctx, f"Reloaded {len(reloadedextensions)} extension{'s' if len(reloadedextensions) != 1 else ''}")
+        e.add_field(
+            name="Successful reloads",
+            value="```diff\n" + "\n".join(successfulreloads) + "```",
+            inline=False
+        ) if successfulreloads else None
+        e.add_field(
+            name="Failed reloads",
+            value="```diff\n" + "\n".join(failedreloads) + "```",
+            inline=False
+        ) if failedreloads else None
+        await ctx.send(embed=e)
+    else:
+        await ctx.send(
+            f":octagonal_sign: **You can't use that!** {ctx.author.mention}, you have to be a bot admin to use the "
+            f"`{config.prefixes[0] + ctx.invoked_with}` command.")
 
 
 # Command logging in console
@@ -171,14 +198,16 @@ if __name__ == "__main__":
         bot.run(env.DISCORDTOKEN)
     except Exception as error:
         if str(error).startswith("Cannot connect to host"):
-            print("Error: Network connection failed. Is Discord down or inaccessible? Is there an internet connection?")
+            print(f"{colour.Fore.RED}[X] Error: Network connection failed. "
+                  "Is Discord down or inaccessible? Is there an internet connection?")
 
         elif str(error) == "Improper token has been passed.":
-            print("Error: Invalid token. Please check if the environment variable \"env.DISCORDTOKEN\" is valid.")
+            print(f"{colour.Fore.RED}[X] Error: Invalid token. Please check if"
+                  " the environment variable \"env.DISCORDTOKEN\" is valid.")
 
         else:
-            print("Error: Uncaught exception during bot initialisation.")
+            print(f"{colour.Fore.RED}[X] Error: Uncaught exception during bot initialisation.")
 
-        print(f"Error details:\n{error}")
+        print(f"{colour.Fore.RED} |  Error details: {error}")
 
 print(f"{colour.Fore.RED}{colour.Style.BRIGHT}[Session ended]")
