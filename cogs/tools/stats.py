@@ -1,5 +1,5 @@
 from discord.ext import commands
-from assets.functions import *
+from assets.functions import initembed
 
 
 class Ping(commands.Cog):

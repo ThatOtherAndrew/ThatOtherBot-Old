@@ -38,10 +38,10 @@ async def on_message(message):
     if config.debug:
         print(f"[-] DEBUG: {message.content}")
 
-    if bot.user in message.mentions:
+    if re.search(f"<@!?{bot.user.id}>", message.content):
         await message.channel.send(
             "Hey, that's me!" + (f" (My prefix is `{config.prefixes[0]}`, in case you forgot, you numpty.)"
-                                 if re.search(f"^<@!?{bot.user.id}>$", message.content) else "")
+                                 if re.fullmatch(f"<@!?{bot.user.id}>", message.content) else "")
         )
 
     # Process command-based operations
@@ -125,7 +125,8 @@ async def reload(ctx, *args):
                 if extensionpath not in reloadedextensions:
                     reloadedextensions.append(extensionpath)
                     if extensionpath is None:
-                        print(f"{colour.Fore.YELLOW} │  {colour.Fore.RED}[X] No extensions found in path cogs.{reloadpath}")
+                        print(f"{colour.Fore.YELLOW} │  {colour.Fore.RED}[X] "
+                              f"No extensions found in path cogs.{reloadpath}")
                         failedreloads.append(f"- Invalid path: {reloadpath}")
                         continue
                     print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RESET}[-] " + extension, end="", flush=True)

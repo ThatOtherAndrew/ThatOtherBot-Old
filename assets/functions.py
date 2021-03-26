@@ -11,8 +11,8 @@ import colorama as colour
 colour.init(autoreset=True)
 
 
-def loadjson(file):
-    """Attempts to load a JSON file and returns it as a Munch() object"""
+def loadjson(file) -> munch.Munch:
+    """Attempts to load a JSON file and returns it as a Munch object"""
     try:
         with open(f"{file}.json", "r") as f:
             return munch.munchify(json.loads(f.read()))
@@ -24,8 +24,8 @@ def loadjson(file):
         sys.exit()
 
 
-def savejson(obj, file):
-    """Takes a Munch() object in and writes it to a file as JSON"""
+def savejson(obj, file) -> None:
+    """Takes a Munch object in and writes it to a file as JSON"""
     try:
         with open(f"{file}.json", "w") as f:
             f.write(json.dumps(munch.unmunchify(obj), indent=2))
@@ -35,8 +35,8 @@ def savejson(obj, file):
         sys.exit()
 
 
-def loadenv():
-    """Loads the environment variables and returns it as a Munch() object"""
+def loadenv() -> munch.Munch:
+    """Loads the environment variables and returns it as a Munch object"""
     load_dotenv()
     return munch.munchify(os.environ)
 
@@ -45,12 +45,12 @@ config = loadjson("config")
 env = loadenv()
 
 
-def formatexception(exception: Exception):
+def formatexception(exception: Exception) -> str:
     exception = "".join(format_exception(type(exception), exception, exception.__traceback__)).rstrip()
     return f"[X] " + exception.replace('\n', '\n │  ')
 
 
-def getextensions(searchdir: str = ""):
+def getextensions(searchdir: str = "") -> list:
     if searchdir.startswith("cogs."):
         searchdir = searchdir[5:]
     if os.path.isfile(f"cogs/{searchdir.replace('.', '/')}.py"):
@@ -74,16 +74,32 @@ def initembed(ctx, title, description="", image=None, bordercolour=config.embed.
         return embed
 
 
-async def reporterror(ctx, exception):
+async def reporterror(ctx, exception) -> None:
     try:
+        formattedexception = formatexception(exception).replace("\n │  ", "\n").replace("```", "`‍`‍`")[4:][-1018:]
         e = initembed(ctx, "An error occurred during execution", bordercolour=0xFF0000)
-        e.add_field(
-            name="Traceback (May be truncated)",
-            value=f"```{formatexception(exception).replace('```', '`‍`‍`')[-1018:]}```"
-        )
+        e.add_field(name="Traceback (May be truncated)", value=f"```{formattedexception}```")
         await ctx.send(embed=e)
     except Exception as criticalerror:
         print(f"{colour.Fore.RED}{colour.Style.BRIGHT}[X] An error occurred, "
               f"attempt to report error as a message failed\n{formatexception(criticalerror)}")
     finally:
         print(f"{colour.Fore.RED}{formatexception(exception)}")
+
+
+# def splitflags(inputargs: list, inputflags: list) -> (list, munch.Munch):
+#     args = []
+#     flags = {}
+#     doubleflag = None
+#     for arg in inputargs:
+#         if doubleflag:
+#             flags[doubleflag] = arg
+#             doubleflag = None
+#         elif re.match(r"^-[^-]+$", arg):
+#             flags[arg[1:]] = True
+#         elif re.match(r"^--[^-]+$", arg):
+#             doubleflag = arg[2:]
+#         else:
+#             args.append(arg)
+#
+#     return args, munch.munchify(flags)

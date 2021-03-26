@@ -1,6 +1,6 @@
 {
   "debug": false,
-  "prefixes": ["\\"],
+  "prefixes": ["\\\\"],
   "presence": {
     "": "Type 1: Playing, Type 2: Watching, Type 3: Listening, Type 4: Competing in",
     "type": 4,
