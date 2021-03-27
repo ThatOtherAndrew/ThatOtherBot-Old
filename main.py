@@ -26,6 +26,11 @@ bot = commands.Bot(
 async def on_ready():
     print(f"{colour.Fore.GREEN}[O] Logged in as {colour.Fore.YELLOW}{bot.user}{colour.Fore.GREEN}, client ID "
           f"{colour.Fore.YELLOW}{str(bot.user.id)}\n{colour.Fore.RESET}{colour.Style.BRIGHT}{'═' * 32}")
+	while True:
+		  # print("cleared spam checker")
+		  await asyncio.sleep(10)
+		  with open("spam_detection.txt", "r+", encoding="utf-8") as spamdetect:
+		  	file.truncate(0)
 
 
 # Core event-based operations
@@ -34,6 +39,19 @@ async def on_message(message):
     # Ignore self
     if message.author == bot.user:
         return
+    
+	# Chain Chomp
+    counter = 0
+	with open("spam_detection.txt", "r+", encoding="utf-8") as spamdetect:
+		  for lines in file:
+		  	if lines.strip("\n") == str(message.author.id):
+		  		counter += 1
+		  
+		  file.writelines(f"{str(message.author.id)}\n")
+		  if counter > 5:  # This is how many repeated messages are allowed
+		  	await message.guild.kick(message.author, reason="spam")
+		  	print("Someone got kicked for spam!")
+    
 
     # Debug mode
     if config.debug:
