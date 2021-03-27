@@ -8,6 +8,7 @@ from glob import glob
 from traceback import format_exception
 import colorama as colour
 
+
 colour.init(autoreset=True)
 
 
@@ -87,19 +88,54 @@ async def reporterror(ctx, exception) -> None:
         print(f"{colour.Fore.RED}{formatexception(exception)}")
 
 
-# def splitflags(inputargs: list, inputflags: list) -> (list, munch.Munch):
-#     args = []
-#     flags = {}
-#     doubleflag = None
-#     for arg in inputargs:
-#         if doubleflag:
-#             flags[doubleflag] = arg
-#             doubleflag = None
-#         elif re.match(r"^-[^-]+$", arg):
-#             flags[arg[1:]] = True
-#         elif re.match(r"^--[^-]+$", arg):
-#             doubleflag = arg[2:]
-#         else:
-#             args.append(arg)
-#
-#     return args, munch.munchify(flags)
+class Flags:
+    class Flag:
+        def __init__(self, flag: str, hasparameter: bool, defaultparametervalue, casesensitive: bool) -> None:
+            self.name = flag
+            self.id = flag if casesensitive else flag.lower()
+            self.hasparameter = hasparameter
+            self.defaultvalue = defaultparametervalue if hasparameter else None
+            self.casesensitive = casesensitive
+
+    def __init__(self, inputargs) -> None:
+        self.inputargs = inputargs
+        self.inputflags = []
+
+    def addflag(self, flag: str, hasparameter: bool = False,
+                defaultparametervalue=None, casesensitive: bool = False) -> None:
+        """Add a flag to be parsed. Set hasparameter to True to use a flag with a parameter"""
+        self.inputflags.append(self.Flag(flag, hasparameter, defaultparametervalue, casesensitive))
+
+    def splitflags(self) -> tuple[list, dict]:
+        """Returns a list of non-flag arguments and a Munch object of flags and their parameters"""
+        inputargs = self.inputargs
+        splitflags = {}
+
+        for flag in self.inputflags:
+            buffer = []
+            if not flag.hasparameter:
+                for arg in inputargs:
+                    if flag.id == (arg if flag.casesensitive else arg.lower()):
+                        splitflags[flag.name] = True
+                    else:
+                        buffer.append(arg)
+                inputargs = buffer
+            else:
+                splitflags[flag.name] = flag.defaultvalue
+                getparameter = False
+                for arg in inputargs:
+                    if getparameter:
+                        splitflags[flag.name] = arg if flag.defaultvalue is None else type(flag.defaultvalue)(arg)
+                        getparameter = False
+                    elif flag.id == (arg if flag.casesensitive else arg.lower()):
+                        getparameter = True
+                    elif (arg if flag.casesensitive else arg.lower()).startswith(f"{flag.id}="):
+                        if flag.defaultvalue is None:
+                            splitflags[flag.name] = arg.split("=", 1)[1]
+                        else:
+                            splitflags[flag.name] = type(flag.defaultvalue)(arg.split("=", 1)[1])
+                    else:
+                        buffer.append(arg)
+                inputargs = buffer
+
+        return inputargs, splitflags

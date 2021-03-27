@@ -1,5 +1,5 @@
 from discord.ext import commands
-from assets.functions import initembed
+from assets.functions import initembed, Flags
 from munch import munchify
 import youtubesearchpython.__future__ as yt
 
@@ -15,8 +15,17 @@ class YouTube(commands.Cog):
 
     @commands.command(aliases=["ytsearch", "searchyt"])
     async def youtubesearch(self, ctx, *args):
-        results = await yt.VideosSearch(" ".join(args), limit=9).next()
-        e = initembed(ctx, "YouTube search results", "Type a number to select a video", "youtubesearch", 0xFF0000)
+        f = Flags(args)
+        f.addflag("--count", True, 5)
+        args, flags = f.splitflags()
+        results = await yt.VideosSearch(" ".join(args), limit=flags["--count"]).next()
+        e = initembed(
+            ctx=ctx,
+            title=f"YouTube search results for {' '.join(args)}",
+            description="Type a number to select a video",
+            image="youtubesearch",
+            bordercolour=0xFF0000
+        )
         for i, result in enumerate(results["result"]):
             result = munchify(result)
             result.viewCount.text = f"`{result.viewCount.text[:-6]}` views" if result.viewCount.text else "Premiere"

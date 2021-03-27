@@ -3,6 +3,7 @@ from assets.functions import *
 
 import re
 
+
 # Changes execution directory to the script location
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
