@@ -26,6 +26,7 @@ bot = commands.Bot(
 async def on_ready():
     print(f"{colour.Fore.GREEN}[O] Logged in as {colour.Fore.YELLOW}{bot.user}{colour.Fore.GREEN}, client ID "
           f"{colour.Fore.YELLOW}{str(bot.user.id)}\n{colour.Fore.RESET}{colour.Style.BRIGHT}{'═' * 32}")
+	  
 	while True:
 		  # print("cleared spam checker")
 		  await asyncio.sleep(10)
@@ -40,6 +41,9 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
+    # Debug mode
+    if config.debug:
+        print(f"[-] DEBUG: {message.content}")
 	# Chain Chomp
     counter = 0
 	with open("spam_detection.txt", "r+", encoding="utf-8") as spamdetect:
@@ -52,6 +56,11 @@ async def on_message(message):
 		  	await message.guild.kick(message.author, reason="spam")
 		  	print("Someone got kicked for spam!")
 
+    if re.search(f"<@!?{bot.user.id}>", message.content):
+        await message.channel.send(
+            "Hey, that's me!" + (f" (My prefix is `{config.prefixes[0]}`, in case you forgot, you numpty.)"
+                                 if re.fullmatch(f"<@!?{bot.user.id}>", message.content) else "")
+        )
 
     # Process command-based operations
     await bot.process_commands(message)
