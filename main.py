@@ -8,9 +8,13 @@ import re
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Create bot instance
+intents = discord.Intents.default()
+intents.members = True
+
 bot = commands.Bot(
     command_prefix=config.prefixes,
     case_insensitive=True,
+    intents=intents,
     status=discord.Status.online,
     activity=[
         discord.Game(name=config.presence.message),
