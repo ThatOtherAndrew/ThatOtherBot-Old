@@ -40,10 +40,11 @@ async def on_message(message):
         print(f"[-] DEBUG: {message.content}")
 
     if re.search(f"<@!?{bot.user.id}>", message.content):
-        await message.channel.send(
-            "Hey, that's me!" + (f" (My prefix is `{config.prefixes[0]}`, in case you forgot, you numpty.)"
-                                 if re.fullmatch(f"<@!?{bot.user.id}>", message.content) else "")
-        )
+        if re.fullmatch(f"<@!?{bot.user.id}>", message.content):
+            prefix = config.prefixes[0].replace("`", "\\`")
+            await message.channel.send(f"Hey, that's me! (My prefix is `{prefix}`, in case you forgot, you numpty.)")
+        else:
+            await message.channel.send("Hey, that's me!")
 
     # Process command-based operations
     await bot.process_commands(message)
