@@ -131,13 +131,13 @@ async def reload(ctx, *args):
                               f"No extensions found in path cogs.{reloadpath}")
                         failedreloads.append(f"- Invalid path: {reloadpath}")
                         continue
-                    print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RESET}[-] " + extension, end="", flush=True)
+                    print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RESET}[-] " + extensionpath, end="", flush=True)
                     try:
                         bot.reload_extension(extensionpath)
-                        print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.GREEN}[O] {extension}")
+                        print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.GREEN}[O] {extensionpath}")
                         successfulreloads.append(f"+ {extensionpath}")
                     except Exception as exception:
-                        print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RED}[X] {extension}\n"
+                        print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RED}[X] {extensionpath}\n"
                               f"{colour.Fore.YELLOW} │    {colour.Fore.RED}- {exception}")
                         failedreloads.append(f"- Unknown error: {exception}")
 
