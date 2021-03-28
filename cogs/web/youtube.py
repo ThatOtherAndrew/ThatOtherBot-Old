@@ -9,15 +9,24 @@ class YouTube(commands.Cog):
         self.bot = bot
 
     @commands.command(aliases=["yt"])
-    async def youtube(self, ctx, *, args):
+    async def youtube(self, ctx, *, args=None):
+        if not args:
+            await ctx.send_help(self.youtube)
+            return
+
         results = await yt.VideosSearch(args, limit=1).next()
         await ctx.send(f"https://youtu.be/{results['result'][0]['id']}")
 
     @commands.command(aliases=["ytsearch", "searchyt"])
     async def youtubesearch(self, ctx, *args):
+        if not args:
+            await ctx.send_help(self.youtubesearch)
+            return
+
         f = Flags(args)
-        f.addflag("--count", True, 5)
+        f.addflag("--count", True, 4)
         args, flags = f.splitflags()
+
         results = await yt.VideosSearch(" ".join(args), limit=flags["--count"]).next()
         e = initembed(
             ctx=ctx,
