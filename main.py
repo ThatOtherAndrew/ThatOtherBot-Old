@@ -13,9 +13,14 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 intents = discord.Intents.default()
 intents.members = True
 
+allowedmentions = discord.AllowedMentions.all()
+allowedmentions.everyone = False
+allowedmentions.roles = False
+
 bot = commands.Bot(
     command_prefix=config.prefixes,
     case_insensitive=True,
+    allowed_mentions=allowedmentions,
     intents=intents,
     status=discord.Status.online,
     activity=[
@@ -66,12 +71,32 @@ async def test(ctx):
 
 
 # Bot admin commands
+@bot.command(aliases=["echo"])
+async def say(ctx, *, args=None):
+    """Sends a message"""
+    if args is None:
+        await ctx.send_help(say)
+        return
+
+    if ctx.author.id in config.staff.admins:
+        await ctx.message.delete()
+        await ctx.send(args)
+    else:
+        await ctx.send(
+            f":octagonal_sign: **You can't use that!** {ctx.author.mention}, you have to be a bot admin to use the "
+            f"`{config.prefixes[0] + ctx.invoked_with}` command.")
+
+
 @bot.command(aliases=["exec"])
-async def execute(ctx, *, arg=None):
+async def execute(ctx, *, args=None):
     """Executes a line of Python code"""
+    if args is None:
+        await ctx.send_help(execute)
+        return
+
     if ctx.author.id in config.staff.admins:
         try:
-            exec(arg)
+            exec(args)
             await ctx.message.add_reaction("👍")
         except Exception as exception:
             await reporterror(ctx, exception)
@@ -82,11 +107,15 @@ async def execute(ctx, *, arg=None):
 
 
 @bot.command(aliases=["eval"])
-async def evaluate(ctx, *, arg=None):
+async def evaluate(ctx, *, args=None):
     """Evaluates a Python expression in the current scope and returns the result"""
+    if args is None:
+        await ctx.send_help(evaluate)
+        return
+
     if ctx.author.id in config.staff.admins:
         try:
-            await ctx.send(f"```{eval(arg)}```")
+            await ctx.send(f"```{eval(args)}```")
         except Exception as exception:
             await reporterror(ctx, exception)
     else:
