@@ -12,28 +12,17 @@ import colorama as colour
 colour.init(autoreset=True)
 
 
-def loadjson(file) -> munch.Munch:
+def loadjson(file: str) -> munch.Munch:
     """Attempts to load a JSON file and returns it as a Munch object"""
-    try:
-        with open(f"{file}.json", "r") as f:
-            return munch.munchify(json.loads(f.read()))
-    except SyntaxError:
-        print("Error: Reading config.json file. Is the config.json file valid syntax?")
-        sys.exit()
-    except FileNotFoundError:
-        print("Error: Locating config.json file. Is the config.json file present in the same directory as this script?")
-        sys.exit()
+    with open(f"{file.replace('.', '/')}.json", "r") as f:
+        return munch.munchify(json.loads(f.read()))
 
 
-def savejson(obj, file) -> None:
+def savejson(obj: munch.Munch, file: str) -> None:
     """Takes a Munch object in and writes it to a file as JSON"""
-    try:
-        with open(f"{file}.json", "w") as f:
-            f.write(json.dumps(munch.unmunchify(obj), indent=2))
-            f.truncate()
-    except FileNotFoundError:
-        print("Error: Locating config.json file. Is the config.json file present in the same directory as this script?")
-        sys.exit()
+    with open(f"{file.replace('.', '/')}.json", "w") as f:
+        f.write(json.dumps(munch.unmunchify(obj), indent=2))
+        f.truncate()
 
 
 def loadenv() -> munch.Munch:
