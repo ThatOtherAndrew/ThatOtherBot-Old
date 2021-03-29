@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from discord.ext import commands
 from assets.functions import *
 
