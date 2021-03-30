@@ -2,3 +2,4 @@ colorama
 discord.py
 munch
 python-dotenv
+youtube-search-python

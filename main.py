@@ -1,15 +1,27 @@
+#!/usr/bin/env python
+
 from discord.ext import commands
 from assets.functions import *
 
 import re
 
+
 # Changes execution directory to the script location
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Create bot instance
+intents = discord.Intents.default()
+intents.members = True
+
+allowedmentions = discord.AllowedMentions.all()
+allowedmentions.everyone = False
+allowedmentions.roles = False
+
 bot = commands.Bot(
     command_prefix=config.prefixes,
     case_insensitive=True,
+    allowed_mentions=allowedmentions,
+    intents=intents,
     status=discord.Status.online,
     activity=[
         discord.Game(name=config.presence.message),
@@ -38,11 +50,12 @@ async def on_message(message):
     if config.debug:
         print(f"[-] DEBUG: {message.content}")
 
-    if bot.user in message.mentions:
-        await message.channel.send(
-            "Hey, that's me!" + (f" (My prefix is `{config.prefixes[0]}`, in case you forgot, you numpty.)"
-                                 if re.search(f"^<@!?{bot.user.id}>$", message.content) else "")
-        )
+    if re.search(f"<@!?{bot.user.id}>", message.content):
+        if re.fullmatch(f"<@!?{bot.user.id}>", message.content):
+            prefix = config.prefixes[0].replace("`", "\\`")
+            await message.channel.send(f"Hey, that's me! (My prefix is `{prefix}`, in case you forgot, you numpty.)")
+        else:
+            await message.channel.send("Hey, that's me!")
 
     # Process command-based operations
     await bot.process_commands(message)
@@ -58,12 +71,32 @@ async def test(ctx):
 
 
 # Bot admin commands
+@bot.command(aliases=["echo"])
+async def say(ctx, *, args=None):
+    """Sends a message"""
+    if args is None:
+        await ctx.send_help(say)
+        return
+
+    if ctx.author.id in config.staff.admins:
+        await ctx.message.delete()
+        await ctx.send(args)
+    else:
+        await ctx.send(
+            f":octagonal_sign: **You can't use that!** {ctx.author.mention}, you have to be a bot admin to use the "
+            f"`{config.prefixes[0] + ctx.invoked_with}` command.")
+
+
 @bot.command(aliases=["exec"])
-async def execute(ctx, *, arg=None):
+async def execute(ctx, *, args=None):
     """Executes a line of Python code"""
+    if args is None:
+        await ctx.send_help(execute)
+        return
+
     if ctx.author.id in config.staff.admins:
         try:
-            exec(arg)
+            exec(args)
             await ctx.message.add_reaction("👍")
         except Exception as exception:
             await reporterror(ctx, exception)
@@ -74,11 +107,15 @@ async def execute(ctx, *, arg=None):
 
 
 @bot.command(aliases=["eval"])
-async def evaluate(ctx, *, arg=None):
+async def evaluate(ctx, *, args=None):
     """Evaluates a Python expression in the current scope and returns the result"""
+    if args is None:
+        await ctx.send_help(evaluate)
+        return
+
     if ctx.author.id in config.staff.admins:
         try:
-            await ctx.send(f"```{eval(arg)}```")
+            await ctx.send(f"```{eval(args)}```")
         except Exception as exception:
             await reporterror(ctx, exception)
     else:
@@ -125,16 +162,17 @@ async def reload(ctx, *args):
                 if extensionpath not in reloadedextensions:
                     reloadedextensions.append(extensionpath)
                     if extensionpath is None:
-                        print(f"{colour.Fore.YELLOW} │  {colour.Fore.RED}[X] No extensions found in path cogs.{reloadpath}")
+                        print(f"{colour.Fore.YELLOW} │  {colour.Fore.RED}[X] "
+                              f"No extensions found in path cogs.{reloadpath}")
                         failedreloads.append(f"- Invalid path: {reloadpath}")
                         continue
-                    print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RESET}[-] " + extension, end="", flush=True)
+                    print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RESET}[-] " + extensionpath, end="", flush=True)
                     try:
                         bot.reload_extension(extensionpath)
-                        print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.GREEN}[O] {extension}")
+                        print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.GREEN}[O] {extensionpath}")
                         successfulreloads.append(f"+ {extensionpath}")
                     except Exception as exception:
-                        print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RED}[X] {extension}\n"
+                        print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RED}[X] {extensionpath}\n"
                               f"{colour.Fore.YELLOW} │    {colour.Fore.RED}- {exception}")
                         failedreloads.append(f"- Unknown error: {exception}")
 
