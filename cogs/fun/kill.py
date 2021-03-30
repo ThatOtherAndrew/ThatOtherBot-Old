@@ -44,7 +44,7 @@ class Kill(commands.Cog):
                 choice(messages.weapon).format(victim, killer, weapon)
             ))
 
-        await ctx.send(f"*{deathmessage.rstrip() + f' for {reason}' if reason else ''}*")
+        await ctx.send(f"*{deathmessage.rstrip() + (f' for {reason}' if reason else '')}*")
 
 
 def setup(bot):
