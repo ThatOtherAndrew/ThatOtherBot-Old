@@ -1,4 +1,5 @@
 from discord.ext import commands
+from discord.utils import escape_markdown
 from assets.functions import initembed, Flags
 from munch import munchify
 import youtubesearchpython.__future__ as yt
@@ -28,9 +29,13 @@ class YouTube(commands.Cog):
         args, flags = f.splitflags()
 
         results = await yt.VideosSearch(" ".join(args), limit=flags["--count"]).next()
+        title = escape_markdown(" ".join(args))
+        if len(title) > 227:
+            title = title[:224] + "..."
+
         e = initembed(
             ctx=ctx,
-            title=f"YouTube search results for {' '.join(args)}",
+            title=f"YouTube search results for `{title}`",
             description="Type a number to select a video",
             image="youtubesearch",
             bordercolour=0xFF0000

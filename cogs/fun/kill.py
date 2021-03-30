@@ -23,6 +23,7 @@ class Kill(commands.Cog):
         f.addflag("--weapon", True)
         f.addflag("--reason", True)
         args, flags = f.splitflags()
+
         victim = flags["--victim"] if flags["--victim"] is not None else user[0].mention if user else \
             ctx.message.reference.resolved.author.mention if ctx.message.reference is not None else ctx.author.mention
         killer = flags["--killer"] if flags["--killer"] is not None else \
