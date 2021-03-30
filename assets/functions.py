@@ -2,7 +2,6 @@ import discord
 import json
 import munch
 import os
-import sys
 from dotenv import load_dotenv
 from glob import glob
 from traceback import format_exception
@@ -64,9 +63,14 @@ def initembed(ctx, title, description="", image=None, bordercolour=config.embed.
         return embed
 
 
+def plaintext(inputstr: str) -> str:
+    cleanstr = f"`{inputstr}`".replace('``', '`‌`').replace('``', '`‌`')
+    return f"`{cleanstr}`"
+
+
 async def reporterror(ctx, exception) -> None:
     try:
-        formattedexception = formatexception(exception).replace("\n │  ", "\n").replace("```", "`‍`‍`")[4:][-1018:]
+        formattedexception = formatexception(exception).replace("\n │  ", "\n").replace("```", "`‌`‌`")[4:][-1018:]
         e = initembed(ctx, "An error occurred during execution", bordercolour=0xFF0000)
         e.add_field(name="Traceback (May be truncated)", value=f"```{formattedexception}```")
         await ctx.send(embed=e)
