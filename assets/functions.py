@@ -44,28 +44,32 @@ def getextensions(searchdir: str = "") -> list:
         searchdir = searchdir[5:]
     if os.path.isfile(f"cogs/{searchdir.replace('.', '/')}.py"):
         return [f"cogs.{searchdir}"]
-    else:
-        extensionpaths = [i.replace("\\", ".").replace("/", ".")[:-3] for i in glob(
-            f"cogs/{searchdir.replace('.', '/')}/**/*.py",
-            recursive=True
-        )]
-        return extensionpaths if extensionpaths != [] else [None]
+    extensionpaths = [i.replace("\\", ".").replace("/", ".")[:-3] for i in glob(
+        f"cogs/{searchdir.replace('.', '/')}/**/*.py",
+        recursive=True
+    )]
+    return extensionpaths if extensionpaths != [] else [None]
 
 
 def initembed(ctx, title, description="", image=None, bordercolour=config.embed.colour):
     embed = discord.Embed(title=title, description=description, color=bordercolour)
     embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url=ctx.author.avatar_url)
-    if image is not None:
-        img = discord.File(f"assets/img/{image}.png", filename=f"{image}.png")
-        embed.set_thumbnail(url=f"attachment://{image}.png")
-        return munch.munchify({"embed": embed, "file": img})
-    else:
+    if image is None:
         return embed
+    img = discord.File(f"assets/img/{image}.png", filename=f"{image}.png")
+    embed.set_thumbnail(url=f"attachment://{image}.png")
+    return munch.munchify({"embed": embed, "file": img})
 
 
-def plaintext(inputstr: str) -> str:
-    cleanstr = f"`{inputstr}`".replace('``', '`‌`').replace('``', '`‌`')
-    return f"`{cleanstr}`"
+def plaintext(inputstr: str, truncatelength: int = None) -> str:
+    cleanstr = inputstr.replace('``', '`‌`').replace('``', '`‌`')
+    if truncatelength is None:
+        return f"``‌{cleanstr}‌``"
+
+    if len(cleanstr) <= truncatelength - 6:
+        return f"``‌{cleanstr}‌``"
+    else:
+        return f"``‌{cleanstr[:truncatelength - 8]}...``"
 
 
 async def reporterror(ctx, exception) -> None:
@@ -112,13 +116,15 @@ class Flags:
                         splitflags[flag.name] = True
                     else:
                         buffer.append(arg)
-                inputargs = buffer
             else:
                 splitflags[flag.name] = flag.defaultvalue
                 getparameter = False
                 for arg in inputargs:
                     if getparameter:
-                        splitflags[flag.name] = arg if flag.defaultvalue is None else type(flag.defaultvalue)(arg)
+                        try:
+                            splitflags[flag.name] = arg if flag.defaultvalue is None else type(flag.defaultvalue)(arg)
+                        except ValueError:
+                            pass
                         getparameter = False
                     elif flag.id == (arg if flag.casesensitive else arg.lower()):
                         getparameter = True
@@ -126,9 +132,11 @@ class Flags:
                         if flag.defaultvalue is None:
                             splitflags[flag.name] = arg.split("=", 1)[1]
                         else:
-                            splitflags[flag.name] = type(flag.defaultvalue)(arg.split("=", 1)[1])
+                            try:
+                                splitflags[flag.name] = type(flag.defaultvalue)(arg.split("=", 1)[1])
+                            except ValueError:
+                                pass
                     else:
                         buffer.append(arg)
-                inputargs = buffer
-
+            inputargs = buffer
         return inputargs, splitflags

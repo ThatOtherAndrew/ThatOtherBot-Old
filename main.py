@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3.9
 
 from discord.ext import commands
 from assets.functions import *
@@ -52,8 +52,8 @@ async def on_message(message):
 
     if re.search(f"<@!?{bot.user.id}>", message.content):
         if re.fullmatch(f"<@!?{bot.user.id}>", message.content):
-            prefix = config.prefixes[0].replace("`", "\\`")
-            await message.channel.send(f"Hey, that's me! (My prefix is `{prefix}`, in case you forgot, you numpty.)")
+            prefix = plaintext(config.prefixes[0])
+            await message.channel.send(f"Hey, that's me! (My prefix is {prefix}, in case you forgot, you numpty.)")
         else:
             await message.channel.send("Hey, that's me!")
 
@@ -84,7 +84,7 @@ async def say(ctx, *, args=None):
     else:
         await ctx.send(
             f":octagonal_sign: **You can't use that!** {ctx.author.mention}, you have to be a bot admin to use the "
-            f"`{config.prefixes[0] + ctx.invoked_with}` command.")
+            f"{plaintext(config.prefixes[0] + ctx.invoked_with)} command.")
 
 
 @bot.command(aliases=["exec"])
@@ -103,7 +103,7 @@ async def execute(ctx, *, args=None):
     else:
         await ctx.send(
             f":octagonal_sign: **You can't use that!** {ctx.author.mention}, you have to be a bot admin to use the "
-            f"`{config.prefixes[0] + ctx.invoked_with}` command.")
+            f"{plaintext(config.prefixes[0] + ctx.invoked_with)} command.")
 
 
 @bot.command(aliases=["eval"])
@@ -115,13 +115,13 @@ async def evaluate(ctx, *, args=None):
 
     if ctx.author.id in config.staff.admins:
         try:
-            await ctx.send(f"```{eval(args)}```")
+            await ctx.send(eval(args))
         except Exception as exception:
             await reporterror(ctx, exception)
     else:
         await ctx.send(
             f":octagonal_sign: **You can't use that!** {ctx.author.mention}, you have to be a bot admin to use the "
-            f"`{config.prefixes[0] + ctx.invoked_with}` command.")
+            f"{plaintext(config.prefixes[0] + ctx.invoked_with)} command.")
 
 
 @bot.command()
@@ -131,7 +131,7 @@ async def disable(ctx, command):
         if bot.get_command(command).enabled:
             bot.get_command(command).enabled = False
             await ctx.send(f":ok_hand: The {command} command is now disabled, and cannot be used until you use "
-                           f"`{config.prefixes[0]}enable {command}`.")
+                           f"{plaintext(config.prefixes[0] + 'enable ' + command)}.")
         else:
             await ctx.send(f"The {command} command is already disabled!")
 
@@ -191,7 +191,7 @@ async def reload(ctx, *args):
     else:
         await ctx.send(
             f":octagonal_sign: **You can't use that!** {ctx.author.mention}, you have to be a bot admin to use the "
-            f"`{config.prefixes[0] + ctx.invoked_with}` command.")
+            f"{plaintext(config.prefixes[0] + ctx.invoked_with)} command.")
 
 
 # Command logging in console
