@@ -1,7 +1,8 @@
-from discord import User
+from discord import Member
 from discord.ext import commands
 from assets.functions import loadjson, Flags
 from random import choice
+from typing import Optional
 
 
 class Kill(commands.Cog):
@@ -9,43 +10,52 @@ class Kill(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def kill(self, ctx, user: commands.Greedy[User] = None, *args):
-        messages = loadjson("cogs.fun.kill")
-
-        if ctx.message.raw_role_mentions:
-            await ctx.send(f"*{choice(messages.murder).format(ctx.author.mention, self.bot.user.mention)} "
-                           "for trying to ping a role*")
-            return
-
-        f = Flags(args)
+    async def kill(self, ctx, user: Optional[Member] = None, *, args: str = ""):
+        f = Flags(args.split())
         f.addflag("--victim", True)
         f.addflag("--killer", True)
         f.addflag("--weapon", True)
         f.addflag("--reason", True)
         args, flags = f.splitflags()
 
-        victim = flags["--victim"] if flags["--victim"] is not None else user[0].mention if user else \
-            ctx.message.reference.resolved.author.mention if ctx.message.reference is not None else ctx.author.mention
-        killer = flags["--killer"] if flags["--killer"] is not None else \
-            "themselves" if victim == ctx.author.mention else ctx.author.mention
-        weapon = flags["--weapon"] if flags["--weapon"] is not None else choice(messages.helditems)
-        reason = flags["--reason"] if flags["--reason"] is not None else " ".join(args) if args else None
+        for key in ("--victim", "--killer"):
+            try:
+                flags[key] = (await commands.MemberConverter().convert(ctx, flags[key] or "")).mention
+            except commands.errors.MemberNotFound:
+                pass
 
-        if flags["--weapon"] or args:
-            deathmessage = choice(messages.weapon).format(victim, killer, weapon)
-        elif flags["--victim"] or user or ctx.message.reference:
-            deathmessage = choice((
-                choice(messages.murder).format(victim, killer),
-                choice(messages.weapon).format(victim, killer, weapon)
-            ))
+        # DEBUG
+        await ctx.send(f"!!DEBUG!!\n{user=}\n{args=}")
+
+        messages = loadjson("cogs.fun.kill")
+
+        # Safeguard to prevent pinging roles
+        if ctx.message.raw_role_mentions:
+            await ctx.send(f"*{choice(messages.murder).format(ctx.author.mention, self.bot.user.mention)} "
+                           "for trying to ping a role*")
+            return
+
+        if flags["--weapon"] is None:
+            if not (user or flags["--killer"]):
+                deathmessage = choice(messages.death).format(
+                    flags["--victim"] or ctx.author.mention
+                )
+            else:
+                deathmessage = choice(messages.murder).format(
+                    victim := flags["--victim"] or (user.mention if user else None) or ctx.author.mention,
+                    flags["--killer"] or ("themselves" if victim == ctx.author.mention else ctx.author.mention)
+                )
         else:
-            deathmessage = choice((
-                choice(messages.death).format(victim),
-                choice(messages.murder).format(victim, killer),
-                choice(messages.weapon).format(victim, killer, weapon)
-            ))
+            deathmessage = choice(messages.weapon).format(
+                victim := flags["--victim"] or (user.mention if user else None) or ctx.author.mention,
+                flags["--killer"] or ("themselves" if victim == ctx.author.mention else user.mention),
+                choice(messages.helditems) if flags["--weapon"].lower() == "random" else flags["--weapon"]
+            )
 
-        await ctx.send(f"*{deathmessage.rstrip() + (f' for {reason}' if reason else '')}*")
+        if flags['--reason'] or args:
+            deathmessage += f" for {(flags['--reason'] or ' '.join(args)).lstrip('for').strip()}"
+
+        await ctx.send(f"*{deathmessage}*")
 
 
 def setup(bot):

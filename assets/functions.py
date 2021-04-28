@@ -98,10 +98,9 @@ class Flags:
         self.inputargs = inputargs
         self.inputflags = []
 
-    def addflag(self, flag: str, hasparameter: bool = False,
-                defaultparametervalue=None, casesensitive: bool = False) -> None:
+    def addflag(self, flag: str, hasparameter: bool = False, defaultvalue=None, casesensitive: bool = False) -> None:
         """Add a flag to be parsed. Set hasparameter to True to use a flag with a parameter"""
-        self.inputflags.append(self.Flag(flag, hasparameter, defaultparametervalue, casesensitive))
+        self.inputflags.append(self.Flag(flag, hasparameter, defaultvalue, casesensitive))
 
     def splitflags(self) -> tuple[list, dict]:
         """Returns a list of non-flag arguments and a Munch object of flags and their parameters"""

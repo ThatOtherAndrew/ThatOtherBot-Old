@@ -204,11 +204,8 @@ async def on_command_completion(ctx):
 @bot.event
 async def on_command_error(ctx, exception):
     """Catches exceptions raised during usage of the bot"""
-    if exception == commands.errors.CommandNotFound:  # Ignore invalid commands
-        pass
-    elif exception == commands.errors.DisabledCommand:  # Ignore disabled command call attempts
-        pass
-    else:
+    ignoredexceptions = [commands.errors.CommandNotFound, commands.errors.DisabledCommand]
+    if exception not in ignoredexceptions:
         await reporterror(ctx, exception)
 
 
