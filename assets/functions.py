@@ -34,9 +34,11 @@ config = loadjson("config")
 env = loadenv()
 
 
-def formatexception(exception: Exception) -> str:
+def formatexception(exception: Exception, indent: bool = False) -> str:
     exception = "".join(format_exception(type(exception), exception, exception.__traceback__)).rstrip()
-    return f"[X] " + exception.replace('\n', '\n │  ')
+    if not config.debug:
+        exception = exception.split("\nDuring handling of the above exception, another exception occurred:\n\n")[0]
+    return (f"[X] " + exception.replace('\n', '\n │  ')) if indent else exception
 
 
 def getextensions(searchdir: str = "") -> list:
@@ -74,15 +76,17 @@ def plaintext(inputstr: str, truncatelength: int = None) -> str:
 
 async def reporterror(ctx, exception) -> None:
     try:
-        formattedexception = formatexception(exception).replace("\n │  ", "\n").replace("```", "`‌`‌`")[4:][-1018:]
+        formattedexception = formatexception(exception).replace("```", "`‌`‌`")[-1018:]
         e = initembed(ctx, "An error occurred during execution", bordercolour=0xFF0000)
         e.add_field(name="Traceback (May be truncated)", value=f"```{formattedexception}```")
         await ctx.send(embed=e)
     except Exception as criticalerror:
         print(f"{colour.Fore.RED}{colour.Style.BRIGHT}[X] An error occurred, "
-              f"attempt to report error as a message failed\n{formatexception(criticalerror)}")
+              f"attempt to report error as a message failed\n │  {criticalerror}")
     finally:
-        print(f"{colour.Fore.RED}{formatexception(exception)}")
+        print(f"{colour.Fore.YELLOW}[!] {ctx.author} ({ctx.author.id}) ran the command "
+              f"{colour.Style.BRIGHT}{ctx.message.content}{colour.Style.NORMAL}, resulting in the following error:")
+        print(f"{colour.Fore.RED}{formatexception(exception, indent=True)}")
 
 
 class Flags:
