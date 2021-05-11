@@ -37,7 +37,7 @@ env = loadenv()
 def formatexception(exception: Exception, indent: bool = False) -> str:
     exception = "".join(format_exception(type(exception), exception, exception.__traceback__)).rstrip()
     if not config.debug:
-        exception = exception.split("\nDuring handling of the above exception, another exception occurred:\n\n")[0]
+        exception = exception.split("\n\nThe above exception was the direct cause of the following exception:\n\n")[0]
     return (f"[X] " + exception.replace('\n', '\n │  ')) if indent else exception
 
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3.9
-
+import aiohttp
 from discord.ext import commands
 from assets.functions import *
 
@@ -17,7 +17,47 @@ allowedmentions = discord.AllowedMentions.all()
 allowedmentions.everyone = False
 allowedmentions.roles = False
 
-bot = commands.Bot(
+
+class Bot(commands.Bot):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.aiohttpsession = None
+
+    async def login(self, *args, **kwargs):
+        print(f"{colour.Fore.YELLOW}[+] Initialising session")
+
+        print(f"{colour.Fore.YELLOW} │  {colour.Fore.RESET}[-] Creating aiohttp client session...", end="")
+        self.aiohttpsession = aiohttp.ClientSession()
+        print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.GREEN}[O] Created aiohttp client session")
+
+        print(f"{colour.Fore.YELLOW} │  {colour.Fore.RESET}[-] Connecting to Discord...", end="")
+        try:
+            await super().login(*args, **kwargs)
+            print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.GREEN}[O] Connected to Discord")
+
+        except Exception as loginerror:
+            if str(loginerror).startswith("Cannot connect to host"):
+                print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RED}[X] Couldn't connect to Discord\n"
+                      f"{colour.Fore.YELLOW} │  {colour.Fore.RED} │  "
+                      f"Is Discord down or inaccessible? Is there an internet connection?")
+
+            elif str(loginerror) == "Improper token has been passed.":
+                print(f"\r{colour.Fore.RED}[X] Error: Invalid token. Please check if"
+                      " the environment variable \"env.DISCORDTOKEN\" is valid.")
+
+            else:
+                print(f"{colour.Fore.RED}[X] Error: Uncaught exception during bot initialisation.")
+
+            print(f"{colour.Fore.YELLOW} │  {colour.Fore.RED} │  Error details:\n"
+                  f"{colour.Fore.YELLOW} │  {colour.Fore.RED} │   - {loginerror}")
+
+    async def close(self):
+        await super().close()
+        if self.aiohttpsession:
+            await self.aiohttpsession.close()
+
+
+bot = Bot(
     command_prefix=config.prefixes,
     case_insensitive=True,
     allowed_mentions=allowedmentions,
@@ -32,11 +72,16 @@ bot = commands.Bot(
 )
 
 
-# Initialising the bot
+@bot.event
+async def on_connect():
+    print(f"\r{colour.Fore.YELLOW}[+] Getting ready...", end="")
+
+
 @bot.event
 async def on_ready():
-    print(f"{colour.Fore.GREEN}[O] Logged in as {colour.Fore.YELLOW}{bot.user}{colour.Fore.GREEN}, client ID "
-          f"{colour.Fore.YELLOW}{str(bot.user.id)}\n{colour.Fore.RESET}{colour.Style.BRIGHT}{'═' * 32}")
+    print(f"\r{colour.Fore.GREEN}[O] Logged in as {colour.Fore.YELLOW}{bot.user}{colour.Fore.GREEN}, "
+          f"client ID {colour.Fore.YELLOW}{str(bot.user.id)}")
+    print(f"{colour.Style.BRIGHT}{'═' * (len(str(bot.user)) + len(str(bot.user.id)) + 29)}")
 
 
 # Core event-based operations
@@ -166,14 +211,14 @@ async def reload(ctx, *args):
                               f"No extensions found in path cogs.{reloadpath}")
                         failedreloads.append(f"- Invalid path: {reloadpath}")
                         continue
-                    print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RESET}[-] " + extensionpath, end="", flush=True)
+                    print(f"{colour.Fore.YELLOW} │  {colour.Fore.RESET}[-] " + extensionpath, end="")
                     try:
                         bot.reload_extension(extensionpath)
                         print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.GREEN}[O] {extensionpath}")
                         successfulreloads.append(f"+ {extensionpath}")
                     except Exception as exception:
                         print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RED}[X] {extensionpath}\n"
-                              f"{colour.Fore.YELLOW} │    {colour.Fore.RED}- {exception}")
+                              f"{colour.Fore.YELLOW} │  {colour.Fore.RED}  - {exception}")
                         failedreloads.append(f"- Unknown error: {exception}")
 
         e = initembed(ctx, f"Reloaded {len(reloadedextensions)} extension{'s' if len(reloadedextensions) != 1 else ''}")
@@ -214,35 +259,19 @@ print(f"{colour.Fore.YELLOW}[+] Loading extensions")
 
 try:
     for extension in getextensions():
-        print("\r │  [-] " + extension, end="", flush=True)
+        print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RESET}[-] {extension}", end="")
         try:
             bot.load_extension(extension)
             print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.GREEN}[O] {extension}")
-        except Exception as error:
+        except Exception as extensionerror:
             print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RED}[X] {extension}\n"
-                  f"{colour.Fore.YELLOW} │    {colour.Fore.RED}- {error}")
+                  f"{colour.Fore.YELLOW} │  {colour.Fore.RED}  - {extensionerror}")
 except TypeError:
     print(f"{colour.Fore.RED}[!] No extensions loaded. This is likely due to a missing cogs directory!")
 
 
 # Run the bot!
-print(f"{colour.Fore.YELLOW}[+] Initialising session")
-
 if __name__ == "__main__":
-    try:
-        bot.run(env.DISCORDTOKEN)
-    except Exception as error:
-        if str(error).startswith("Cannot connect to host"):
-            print(f"{colour.Fore.RED}[X] Error: Network connection failed. "
-                  "Is Discord down or inaccessible? Is there an internet connection?")
-
-        elif str(error) == "Improper token has been passed.":
-            print(f"{colour.Fore.RED}[X] Error: Invalid token. Please check if"
-                  " the environment variable \"env.DISCORDTOKEN\" is valid.")
-
-        else:
-            print(f"{colour.Fore.RED}[X] Error: Uncaught exception during bot initialisation.")
-
-        print(f"{colour.Fore.RED} |  Error details: {error}")
+    bot.run(env.DISCORDTOKEN)
 
 print(f"{colour.Fore.RED}{colour.Style.BRIGHT}[Session ended]")
