@@ -26,14 +26,14 @@ class Bot(commands.Bot):
     async def login(self, *args, **kwargs):
         print(f"{colour.Fore.YELLOW}[+] Initialising session")
 
-        print(f"{colour.Fore.YELLOW} │  {colour.Fore.RESET}[-] Creating aiohttp client session...", end="")
+        print(f"{colour.Fore.YELLOW} │  {colour.Fore.RESET}[-] Create aiohttp client session", end="")
         self.aiohttpsession = aiohttp.ClientSession()
-        print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.GREEN}[O] Created aiohttp client session")
+        print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.GREEN}[O] Create aiohttp client session")
 
-        print(f"{colour.Fore.YELLOW} │  {colour.Fore.RESET}[-] Connecting to Discord...", end="")
+        print(f"{colour.Fore.YELLOW} │  {colour.Fore.RESET}[-] Connect to Discord", end="")
         try:
             await super().login(*args, **kwargs)
-            print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.GREEN}[O] Connected to Discord")
+            print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.GREEN}[O] Connect to Discord")
 
         except Exception as loginerror:
             if str(loginerror).startswith("Cannot connect to host"):
