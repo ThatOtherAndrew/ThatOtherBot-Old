@@ -1,4 +1,3 @@
-import aiohttp
 from discord.ext import commands
 from assets.functions import env, initembed
 from munch import Munch, munchify
@@ -29,7 +28,7 @@ class WolframAlpha(commands.Cog):
             if self.conversations[ctx.author.id].s:
                 url += f"&s={self.conversations[ctx.author.id].s}"
 
-            async with aiohttp.request("GET", url) as resp:
+            async with self.bot.aiohttpsession.request("GET", url) as resp:
                 response = munchify(await resp.json(content_type="application/json"))
 
             if not hasattr(response, "error"):
