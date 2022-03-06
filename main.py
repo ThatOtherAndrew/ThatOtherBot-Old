@@ -21,35 +21,39 @@ allowedmentions.roles = False
 class Bot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.logging = Logging()
         self.aiohttpsession = None
 
     async def login(self, *args, **kwargs):
-        print(f"{colour.Fore.YELLOW}[+] Initialising session")
+        self.logging.log("Initialising session", "more")
 
-        print(f"{colour.Fore.YELLOW} │  {colour.Fore.RESET}[-] Create aiohttp client session", end="")
+        self.logging.log("Create aiohttp client session", temporary=True)
         self.aiohttpsession = aiohttp.ClientSession()
-        print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.GREEN}[O] Create aiohttp client session")
+        self.logging.log("Create aiohttp client session", "success")
 
-        print(f"{colour.Fore.YELLOW} │  {colour.Fore.RESET}[-] Connect to Discord", end="")
+        self.logging.log("Connect to Discord", temporary=True)
         try:
             await super().login(*args, **kwargs)
-            print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.GREEN}[O] Connect to Discord")
+            self.logging.log("Connect to Discord", "success")
 
         except Exception as loginerror:
+            self.logging.log("Couldn't connect to Discord", "error")
+
             if str(loginerror).startswith("Cannot connect to host"):
-                print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RED}[X] Couldn't connect to Discord\n"
-                      f"{colour.Fore.YELLOW} │  {colour.Fore.RED} │  "
-                      f"Is Discord down or inaccessible? Is there an internet connection?")
+                self.logging.log("Is Discord down or inaccessible? Is there an internet connection?", "error",
+                                 prefix=" -  ")
 
             elif str(loginerror) == "Improper token has been passed.":
-                print(f"\r{colour.Fore.RED}[X] Error: Invalid token. Please check if"
-                      " the environment variable \"env.DISCORDTOKEN\" is valid.")
+                self.logging.log("Invalid token. Please ensure the environment variable "
+                                 "\"env.DISCORDTOKEN\" is valid.", "error", prefix=" -  ")
 
             else:
-                print(f"{colour.Fore.RED}[X] Error: Uncaught exception during bot initialisation.")
+                self.logging.log("Uncaught exception during bot initialisation.", "error", prefix=" -  ")
 
-            print(f"{colour.Fore.YELLOW} │  {colour.Fore.RED} │  Error details:\n"
-                  f"{colour.Fore.YELLOW} │  {colour.Fore.RED} │   - {loginerror}")
+            self.logging.log("Error details:", "error", indent=True)
+            self.logging.log(formatexception(loginerror), "error", prefix="")
+
+            await self.close()
 
     async def close(self):
         await super().close()
@@ -259,19 +263,22 @@ print(f"{colour.Fore.YELLOW}[+] Loading extensions")
 
 try:
     for extension in getextensions():
-        print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RESET}[-] {extension}", end="")
+        bot.logging.log(extension, "info", temporary=True)
         try:
             bot.load_extension(extension)
-            print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.GREEN}[O] {extension}")
+            bot.logging.log(extension, "success")
         except Exception as extensionerror:
-            print(f"\r{colour.Fore.YELLOW} │  {colour.Fore.RED}[X] {extension}\n"
-                  f"{colour.Fore.YELLOW} │  {colour.Fore.RED}  - {extensionerror}")
+            bot.logging.log(extension, "error")
+            bot.logging.log(extensionerror, "error", prefix=" -  ")
+            bot.logging.log("Error details:", "error", indent=True)
+            bot.logging.log(formatexception(extensionerror), "error", prefix="")
+
 except TypeError:
-    print(f"{colour.Fore.RED}[!] No extensions loaded. This is likely due to a missing cogs directory!")
+    bot.logging.log("No extensions loaded. This is likely due to a missing cogs directory!", "warn")
 
 
 # Run the bot!
 if __name__ == "__main__":
     bot.run(env.DISCORDTOKEN)
 
-print(f"{colour.Fore.RED}{colour.Style.BRIGHT}[Session ended]")
+bot.logging.log("[Session ended]", prefix=colour.Fore.RED + colour.Style.BRIGHT)

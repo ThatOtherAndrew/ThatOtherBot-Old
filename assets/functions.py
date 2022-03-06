@@ -2,6 +2,7 @@ import discord
 import json
 import munch
 import os
+import typing
 from dotenv import load_dotenv
 from glob import glob
 from traceback import format_exception
@@ -143,3 +144,58 @@ class Flags:
                         buffer.append(arg)
             inputargs = buffer
         return inputargs, splitflags
+
+
+class Logging:
+    _channelicons = {"i": "-", "s": "O", "w": "!", "e": "X", "d": "i", "m": "+"}
+    _channelcolours = {
+        "-": colour.Fore.RESET,
+        "O": colour.Fore.GREEN,
+        "!": colour.Fore.YELLOW,
+        "X": colour.Fore.RED,
+        "i": colour.Style.BRIGHT,
+        "+": colour.Fore.YELLOW
+    }
+    _channeltypes = typing.Literal[
+        "-", "i", "info",
+        "O", "s", "success",
+        "!", "w", "warn",
+        "X", "e", "error",
+        "i", "d", "debug",
+        "+", "m", "more"
+    ]
+
+    def __init__(self):
+        self.indents = []
+        self.carriagereturn = False
+
+    def log(self, text, channel: _channeltypes = "info", *, prefix: str = None,
+            indent: bool = None, indentstring: str = " │  ", temporary: bool = False) -> None:
+
+        if channel[0] in self._channelicons.keys():
+            channelicon = self._channelicons[channel[0]]
+        elif channel in self._channelicons.values():
+            channelicon = channel
+        else:
+            channelicon = "X"
+
+        channelcolour = self._channelcolours[channelicon]
+        if prefix is None:
+            prefix = f"[{channelicon}] "
+        text = text.replace("\n", f"\n{''.join(self.indents)}{channelcolour}{' ' * len(prefix)}")
+
+        if self.carriagereturn:
+            print("\r", end="")
+            self.carriagereturn = False
+        print(f"{''.join(self.indents)}{channelcolour}{prefix}{text}", end="" if temporary else "\n")
+
+        self.carriagereturn = temporary
+        if indent or (indent is None and channelicon == "+"):
+            self.indents.append(channelcolour + indentstring)
+
+    def unindent(self, level: int = 1) -> None:
+        try:
+            for _ in range(level):
+                self.indents.pop()
+        except IndexError:
+            self.indents = []
